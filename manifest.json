@@ -1,5 +1,5 @@
 {
-    "manifest_version": 3,
+    "manifest_version": 2,
     "name": "eth-address-labeler-beta",
     "description": "Label Ethereum addresses in chrome!",
     "version": "1.0",
@@ -8,9 +8,20 @@
         "default_icon": "icon.png",
         "default_popup" : "popup.html"
     },
+    "background" : {
+        "service_worker" : "event_script.js"
+    },
     "icons" : {
         "16" : "icon16.png",
         "48" : "icon48.png",
         "128" : "icon128.png"
-    } 
+    },
+    "commands" : {
+        "toggle labels" : {
+            "suggested_key" : {"default" : "Ctrl+Shift+L",
+                                "mac" : "Command+Shift+L"
+        },
+            "description" : "turn on/off labels for current tab"
+        }
+    }
 }
