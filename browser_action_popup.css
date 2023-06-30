@@ -1,0 +1,65 @@
+body{
+    width:300px;
+    height:400px;
+    margin:0;
+    font-family: Arial, sans-serif;
+    display:flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* title section */
+.header {
+    text-align: center;
+}
+
+h1 {
+    font-size: 30px;
+}
+
+/* addresses section */
+.addresses-section {
+    width:70vw;
+    display:flex;
+    flex-direction: column;
+    gap:1vw;
+}
+
+.button-section {
+    display: flex;
+    justify-content: space-between;
+    height:8vw;
+}
+
+.edit-button {
+    height:100%;
+    cursor: pointer;
+}
+
+.addresses-window {
+    height:50vw;
+    background-color: lightgray;
+    border-radius: 5px;
+}
+
+/* footer section */
+/* .footer {
+} */
+
+.footer-links{
+    text-decoration: none;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.twitter-icon-link {
+    width: 30px;
+}
+
+.angelorg-link {
+    color: #7a8952;
+    font-size: 20px;
+    font-weight: bold;
+}
