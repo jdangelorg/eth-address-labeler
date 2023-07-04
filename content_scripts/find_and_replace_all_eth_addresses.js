@@ -1,12 +1,27 @@
-try{
-    window.addEventListener("load", (event)=>{
-        chrome.storage.local.get('ethLabels',(res)=>{
-            if(Object.keys(res.ethLabels).length > 0){
-                const labels = res.ethLabels
+// find and replace all ethereum addreses for all saved labels every time a new label is added
+try {
+    chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+        if (msg.request === 'newLabelAdded') {
+            loadLabelsReplaceTextConstructObserver();
+            alert('replacing new label!')
+        }
+    });
+} catch (err) {
+    console.error(err);
+    console.log('error in receiving newLabelAdded message and replacing text');
+}
+
+// This is a new function to load labels and run replaceText on the document.
+// This function is called when the page initially loads and whenever a new label is added.
+function loadLabelsReplaceTextConstructObserver() {
+    chrome.storage.local.get(['ethLabels','replaceTextState'], (res) => {
+        if(res.replaceTextState){
+            if (res.ethLabels && Object.keys(res.ethLabels).length > 0) {
+                console.log(res.ethLabels);
+                const labels = res.ethLabels;
     
-                // run replaceText on the entire document when the page initially loads
-                replaceText(document.body, labels)
-        
+                replaceText(document.body, labels);
+    
                 // Initialize a mutation observer
                 const observer = new MutationObserver((mutations)=>{
                     // For each mutation
@@ -26,15 +41,23 @@ try{
                 // Configure the observer to watch for nodes being added to the document, and then run replaceText on all new added nodes
                 observer.observe(document.body, { childList: true, subtree: true });
             } else {
-                console.log('no labels saved')
+                console.log('no labels saved');
             }
-        })
+        }
+    });
+}
+
+// find and replace all ethereum addreses for all saved labels on page load
+try{
+    window.addEventListener("load", (event)=>{
+        loadLabelsReplaceTextConstructObserver()
     })
 }catch(err){
     console.error(err)
-    console.log('error haha')
+    console.log('error on load and replacing text')
 }
 
+// the replace text functions
 function replaceText(node, labels) {
     if (node.nodeType === Node.TEXT_NODE) {
         // Obtain a list of regular expressions from the label keys

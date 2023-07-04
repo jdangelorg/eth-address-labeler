@@ -32,6 +32,16 @@ h1 {
     height:8vw;
 }
 
+.on-off-button {
+    height: 100%;
+    cursor: pointer;
+}
+
+.plus-button {
+    height:100%;
+    cursor: pointer;
+}
+
 .edit-button {
     height:100%;
     cursor: pointer;
@@ -41,6 +51,9 @@ h1 {
     height:50vw;
     background-color: lightgray;
     border-radius: 5px;
+    display:flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* footer section */

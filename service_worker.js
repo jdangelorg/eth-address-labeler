@@ -6,7 +6,8 @@ chrome.runtime.onInstalled.addListener(()=>{
         visible:false,
     })
     chrome.storage.local.set({
-        ethLabels:{}
+        ethLabels:{},
+        replaceTextState:true
     })
 })
 
@@ -42,6 +43,10 @@ chrome.runtime.onMessage.addListener((msg,sender,sendResponse)=>{
             details.visible = false
             chrome.contextMenus.update(ethAdressContextMenuId,details)
         }
+    } else if (msg.request === 'newLabelAdded') {
+        chrome.tabs.sendMessage(sender.tab.id,{
+            request: 'newLabelAdded'
+        });
     }
 })
 
@@ -56,7 +61,8 @@ chrome.contextMenus.onClicked.addListener(async (info)=>{
             }, ()=>{
                 chrome.tabs.sendMessage(tab.id,{
                     request: 'labelAttempt',
-                    address: currentSelectedAddress
+                    address: currentSelectedAddress,
+                    tabId: tab.id
                 });
             }
         )
@@ -65,7 +71,16 @@ chrome.contextMenus.onClicked.addListener(async (info)=>{
 
 chrome.commands.onCommand.addListener((command)=>{
     if(command==="toggle labels"){
-        console.log(`works: ${command}`)
+        chrome.storage.local.get('replaceTextState',(res)=>{
+            chrome.storage.local.set({
+                replaceTextState:res.replaceTextState?false:true
+            },()=>{
+                chrome.tabs.reload()
+                chrome.runtime.sendMessage({
+                    request:'toggleKeyCommandExecuted'
+                })
+            })
+        })
     }
 })
 
