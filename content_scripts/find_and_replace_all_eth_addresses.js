@@ -19,8 +19,17 @@ function loadLabelsReplaceTextConstructObserver() {
             if (res.ethLabels && Object.keys(res.ethLabels).length > 0) {
                 console.log(res.ethLabels);
                 const labels = res.ethLabels;
+
+                // Obtain a list of regular expressions from the label keys
+                const regexes = Object.keys(labels).map(address => {
+                    // Create a regex that matches the full address or its shortened form
+                    return `0x[a-fA-F0-9]{4,6}.*${address.substr(-4)}`;
+                });
+
+                // Combine all regular expressions into one
+                const addressesRegex = new RegExp(regexes.join('|'), 'gi');
     
-                replaceText(document.body, labels);
+                replaceText(document.body, labels, addressesRegex);
     
                 // Initialize a mutation observer
                 const observer = new MutationObserver((mutations)=>{
@@ -31,7 +40,7 @@ function loadLabelsReplaceTextConstructObserver() {
                             // Process each added node
                             mutation.addedNodes.forEach((node)=>{
                                 if (node.nodeType === Node.ELEMENT_NODE) {
-                                    replaceText(node, labels);
+                                    replaceText(node, labels, addressesRegex);
                                 }
                             });
                         }
@@ -58,26 +67,11 @@ try{
 }
 
 // the replace text functions
-function replaceText(node, labels) {
+function replaceText(node, labels, addressesRegex) {
+    // If the element is a text node or if it is an a tag or a span tag containing an ETH address in it's href
     if (node.nodeType === Node.TEXT_NODE) {
-        // Obtain a list of regular expressions from the label keys
-        const regexes = Object.keys(labels).map(address => {
-            // Create a regex that matches the full address or its shortened form
-            return `0x[a-fA-F0-9]{4,6}.*${address.substr(-4)}`;
-        });
-
-        // Combine all regular expressions into one
-        const regex = new RegExp(regexes.join('|'), 'gi');
-        /* console.log('regex',regex)
-
-        // now, use this regex to test a string:
-        let testStr = 'Some text with your eth address 0xabcd...1234 somewhere in between 0x5c6403...0f72E99D yjhghh 0x5c64031C62061865E5FD0F53d3CDaeF80f72E99D';
-        let result = testStr.match(regex);
-
-        console.log('regex test: ',result);  // will print the matching parts of the string */
-
         // Replace each match in the text content with the corresponding label
-        const newContent = node.textContent.replace(regex, match => {
+        const newContent = node.textContent.replace(addressesRegex, match => {
             // Retrieve the full address corresponding to the match
             const fullAddress = Object.keys(labels).find(address => couldMatch(address, match));
             // If a full address was found, return the label, otherwise return the match unchanged
@@ -91,7 +85,7 @@ function replaceText(node, labels) {
     } else {
         // If the node is not a text node, recurse into its child nodes
         for (let child of node.childNodes) {
-            replaceText(child, labels);
+            replaceText(child, labels, addressesRegex);
         }
     }
 }
@@ -104,6 +98,11 @@ function couldMatch(fullAddress, partialAddress) {
 
     // Check if the partial address could match the full one
     return partialStart === fullStart && partialEnd === fullEnd;
+}
+
+function couldContainAddress(href) {
+    // Check if the href could contain an Ethereum address
+    return href && href.includes('/address/');
 }
 
 

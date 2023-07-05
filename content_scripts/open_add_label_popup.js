@@ -60,25 +60,22 @@ function createAddLabelPopup(selectedAddress) {
     }, 0);
 
     return new Promise((resolve, reject) => {
-        // Modify the submitButton event listener to resolve the Promise
+        // Add submitButton event listener to resolve the Promise
         submitButton.addEventListener('click', ()=>{
-            var labels = []
             chrome.storage.local.get('ethLabels', (res)=>{
-                labels = Object.values(res.ethLabels)
-                console.log(Object.values(res.ethLabels))
+                const labels = Object.values(res.ethLabels)
+                if(labels.includes(inputLabel.value.trim())){
+                    reject('label already used') // reject the promise if the label has already been used for another address
+                } else if(inputLabel.value !== ''){
+                    removePopup(popupMainDiv)
+                    resolve(inputLabel.value) // Resolve the Promise with the entered label
+                } else {
+                    reject('No label entered') // Reject the Promise if no label was entered
+                }
             })
-            console.log(labels.includes(inputLabel.value))
-            if(labels.includes(inputLabel.value)){
-                reject('label already used') // reject the promise if the label has already been used for another address
-            } else if(inputLabel.value !== ''){
-                removePopup(popupMainDiv)
-                resolve(inputLabel.value) // Resolve the Promise with the entered label
-            } else {
-                reject('No label entered') // Reject the Promise if no label was entered
-            }
         })
         
-        // Modify the closeButton event listener to reject the Promise
+        // Add closeButton event listener to reject the Promise
         closeButton.addEventListener('click', () => {
             removePopup(popupMainDiv)
             reject('Popup closed') // Reject the Promise if the popup was closed
