@@ -95,7 +95,7 @@ function removePopup(popupNode){
     window.hasRun = true;
     chrome.runtime.onMessage.addListener(async(msg,sender,sendResponse)=>{
         if(msg.request === 'labelAttempt'){
-            const newAddress=msg.address
+            const newAddress=msg.address.toLowerCase()
             const popupMainDivCheck = document.querySelector('.popup-main-div')
             if(popupMainDivCheck){
                 removePopup(popupMainDivCheck)
