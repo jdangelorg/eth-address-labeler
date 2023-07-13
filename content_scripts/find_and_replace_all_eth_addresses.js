@@ -3,7 +3,6 @@ try {
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (msg.request === 'newLabelAdded') {
             loadLabelsReplaceTextConstructObserver();
-            alert('replacing new label!')
         }
     });
 } catch (err) {
@@ -17,18 +16,18 @@ function loadLabelsReplaceTextConstructObserver() {
     chrome.storage.local.get(['ethLabels','replaceTextState'], (res) => {
         if(res.replaceTextState){
             if (res.ethLabels && Object.keys(res.ethLabels).length > 0) {
-                // console.log('ethLabels object: ',res.ethLabels);
+                console.log('ethLabels object: ',res.ethLabels);
                 const labels = res.ethLabels;
 
                 // Obtain a list of regular expressions from the label keys
                 const regexes = Object.keys(labels).map(address => {
                     // Create a regex that matches the full address or its shortened form
-                    return `0x[a-fA-F0-9]{4,6}.*${address.substr(-4)}`;
+                    return `0x[a-fA-F0-9]{1,6}.*${address.substr(-4)}`;
                 });
 
                 // Combine all regular expressions into one
                 const addressesRegex = new RegExp(regexes.join('|'), 'gi');
-                // console.log('global addresses regex',addressesRegex)
+                console.log('global addresses regex',addressesRegex)
     
                 replaceText(document.body, labels, addressesRegex);
     
@@ -69,34 +68,14 @@ try{
 
 // the replace text functions
 function replaceText(node, labels, addressesRegex) {
-    // If the element is a text node or if it is an a tag or a span tag containing an ETH address in it's href
+    // If the element is a text node (any piece of text in an html document)
     if (node.nodeType === Node.TEXT_NODE) {
-        if (node.textContent === '0x4Cc3cc...945F7633') {
-            console.log('node: ', node)
-        }
-        // Replace each match in the text content with the corresponding label, saves into a new variable because that's the function works,
-        // looks into the text content of the particular node we're on, and for every instance of text ('matched substring') that matches our global address regex,
-        // it runs a replacer function on it. if text content = 'when the dog named 0xAD74e1ca54b4289AD65E4897B8336289F2ac55Cd went to talk to his friend named 0x4Cc3cc...945F7633, they were very happy.'
-        // the replacer function would run on both the first ethereum address and the again on the second, shortened one as well. 
-        const newContent = node.textContent.replace(addressesRegex, (match) => {
-            const matchedSubstr = match.toLowerCase()
-            // || node.textContent === ' 0x9e...f520 '
-            if (matchedSubstr === '0x4Cc3cc...945F7633') {
-                console.log(`attempting to replace ${matchedSubstr}`);
-            }
-
-            // Retrieve the full address corresponding to the match, .find retrieves the first item in an array that satisfies the testing condition,
-            // it loops through the array and tests each array item against a testing condition, in this case our could match function
-            const fullAddress = Object.keys(labels).find(address => couldMatch(address, matchedSubstr));
-            // If a full address was found, return the label, otherwise return the match unchanged
-            return fullAddress ? labels[fullAddress] : matchedSubstr;
-        });
-
-        // If the text content was changed, update it
-        if (node.textContent !== newContent) {
-            node.textContent = newContent;
-            console.log('textContent', node.textContent)
-            console.log('changed')
+        replaceTextInTextNode(node, labels, addressesRegex)
+    // else if the element is an a tag (an element node) that contains an ethereum address in it
+    } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'A' && hrefIsEtherscanAddress(node.href)) {
+        if (isEndOfAddress(node.textContent, node.href)) {
+            // If the text content of the a tag is the end of the Ethereum address found in the href, replace the a tag text content
+            replaceTextInTextNode(node, labels, addressesRegex);
         }
     } else {
         // If the node is not a text node, recurse into its child nodes
@@ -106,16 +85,49 @@ function replaceText(node, labels, addressesRegex) {
     }
 }
 
+function replaceTextInTextNode(node, labels, addressesRegex) {
+    // Replace each match in the text content with the corresponding label, saves into a new variable because that's the function works,
+    // looks into the text content of the particular node we're on, and for every instance of text ('matched substring') that matches our global address regex,
+    // it runs a replacer function on it. if text content = 'when the dog named 0xAD74e1ca54b4289AD65E4897B8336289F2ac55Cd went to talk to his friend named 0x4Cc3cc...945F7633, they were very happy.'
+    // the replacer function would run on both the first ethereum address and the again on the second, shortened one as well. 
+    const newContent = node.textContent.replace(addressesRegex, (match) => {
+        const matchedSubstr = match.toLowerCase()
+        // Retrieve the full address corresponding to the match, .find retrieves the first item in an array that satisfies the testing condition,
+        // it loops through the array and tests each array item against a testing condition, in this case our could match function
+        const fullAddress = Object.keys(labels).find(address => couldMatch(address, matchedSubstr));
+        // If a full address was found, return the label, otherwise return the match unchanged
+        return fullAddress ? labels[fullAddress] : matchedSubstr;
+    });
+
+    // If the text content was changed, update it
+    if (node.textContent !== newContent) {
+        node.textContent = newContent;
+    }
+}
+
 function couldMatch(fullAddress, partialOrFullAddress) {
     console.log(`could match function, trying to see if full address: ${fullAddress} matches partialOrFullAddress: ${partialOrFullAddress}`);
     const partialStart = partialOrFullAddress.substr(0, 4);  // Get the first 4 and last 4 characters of the address we're testing against
     const partialEnd = partialOrFullAddress.substr(-4);
     const fullStart = fullAddress.substr(0, 4);  // Get the first 4 and last 4 characters of the full address gotten from the ethLabels database in storage
-    const fullEnd = fullAddress.substr(-4); 
+    const fullEnd = fullAddress.substr(-4);
 
     // Check if the partial address could match the full one
     console.log('address is a match:, partialStart, partialEnd, fullStart, fullEnd', partialStart === fullStart && partialEnd === fullEnd, partialStart, partialEnd, fullStart, fullEnd)
     return partialStart === fullStart && partialEnd === fullEnd;
+}
+
+function hrefIsEtherscanAddress(href) {
+    // Check if the href contains the pattern found at the end of etherscan links
+    const regex = /\/address\/0x[a-fA-F0-9]{40}$/i;
+    return href && regex.test(href);
+}
+
+function isEndOfAddress(text, href) {
+    // Extract the address from the href
+    const hrefAddress = href.split('/').pop();
+    // Check if the link text is the last 6 characters of the href address
+    return hrefAddress.endsWith(text);
 }
 
 

@@ -102,7 +102,6 @@ function removePopup(popupNode){
                 // document.body.removeChild(popupMainDivCheck)
             }
             const newLabel = await createAddLabelPopup(newAddress)
-            console.log('newLabel',newLabel)
             if (newLabel) {
                 // Using chrome.storage.sync to store the label
                 chrome.storage.local.get('ethLabels', (res)=>{
@@ -119,7 +118,6 @@ var updateEthLabels=(labelsObj, newLabel, newAddress)=>{
     chrome.storage.local.set({
         ethLabels:labelsObj
     },()=>{
-        alert(newAddress+' is set to '+newLabel);
         chrome.runtime.sendMessage({request: 'newLabelAdded'})
     })
 }

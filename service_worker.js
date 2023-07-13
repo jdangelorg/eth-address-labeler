@@ -14,8 +14,8 @@ chrome.runtime.onInstalled.addListener(()=>{
 var ethAdressContextMenuId = 'label-eth-address-context-menu-item'
 const ethAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 function getEthAddressFromUrl(url) {
-    const match = url.match(/0x[a-fA-F0-9]{40}/);
-    return match ? match[0] : null;
+    const match = url.match(/\/address\/(0x[a-fA-F0-9]{40})/);
+    return match ? match[1] : null;
 }
 
 currentSelectedAddress=null
@@ -32,11 +32,15 @@ chrome.runtime.onMessage.addListener((msg,sender,sendResponse)=>{
             contexts: ['selection', 'link'],
             visible:null
         }
+        // the context menu (right click option) for adding an eth label is hidden by default, if it passes any of our conditions,
+        // then it will become visible and allow for the user to add a label
+        console.log(text)
+        console.log(getEthAddressFromUrl(text)) 
         const ethAddress = getEthAddressFromUrl(text)
         if(ethAddressPattern.test(text)){
             updateContextMenu(details)
             currentSelectedAddress=text
-        }else if(ethAddress){ 
+        }else if(ethAddress){
             updateContextMenu(details)
             currentSelectedAddress=ethAddress
         }else{
