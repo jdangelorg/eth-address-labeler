@@ -70,14 +70,14 @@ try{
 function replaceText(node, labels, addressesRegex) {
     // If the element is a text node (any piece of text in an html document)
     if (node.nodeType === Node.TEXT_NODE) {
-        // if(node.textContent == 'FF0d4e'){
+        // if(node.textContent == '0x358940...90ebd794'){
         //     console.log('entered text node conditional')
         // }
         replaceTextInTextNode(node, labels, addressesRegex)
     // else if the element is an a tag (an element node) that contains an ethereum address in it, as well as text content that is the end of the address found
     // in a tag's href. this is for dexscreener.com because it doesn't show shortened addresses instead it shows the last 6 chars of the address
     } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'A' && hrefIsEtherscanAddress(node.href) && isLinkTextEndOfAddress(node.textContent, node.href)) {
-        // if(node.textContent == 'FF0d4e'){
+        // if(node.textContent == '0x358940...90ebd794'){
         //     console.log('entered a tag node conditional')
         //     console.log('is the href an etherscan address link?', hrefIsEtherscanAddress(node.href))
         //     console.log('is the a tag text the end of that address?',isLinkTextEndOfAddress(node.textContent, node.href))
@@ -96,7 +96,7 @@ function replaceText(node, labels, addressesRegex) {
 
 function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddress = false) {
     let newContent = node.textContent;
-    // if(node.textContent == 'FF0d4e'){
+    // if(node.textContent == '0x358940...90ebd794'){
     //     console.log('arguments passed to replaceTextInTextNode', node, labels, addressesRegex)
     //     console.log('isLinkTextEndOfAddress variable',isLinkTextEndOfAddress)
     // }
@@ -142,14 +142,14 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
         // the replacer function would run on both the first ethereum address and the again on the second, shortened one as well.
         newContent = node.textContent.replace(addressesRegex, (match) => {
             const matchedSubstr = match.toLowerCase()
-            // if(node.textContent == 'FF0d4e'){
+            // if(node.textContent == '0x358940...90ebd794'){
             //     console.log('variable matchedSubstr', matchedSubstr)
             // }
             // Retrieve the full address corresponding to the match, .find retrieves the first item in an array that satisfies the testing condition,
             // it loops through the array and tests each array item against a testing condition, in this case our could match function
             const fullAddress = Object.keys(labels).find(address => couldMatch(address, matchedSubstr));
             // If a full address was found, return the label, otherwise return the match unchanged
-            // if(node.textContent == 'FF0d4e'){
+            // if(node.textContent == '0x358940...90ebd794'){
             //     console.log('fullAddress variable',fullAddress)
             // }
             return fullAddress ? labels[fullAddress] : matchedSubstr;
@@ -157,8 +157,8 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
     }
     // If the text content was changed, update it
     if (node.textContent !== newContent) {
-        // console.log('here', newContent)
-        // if(node.textContent == 'FF0d4e'){
+        // console.log('attempting to replace', node.textContent, 'with', newContent)
+        // if(node.textContent == '0x358940...90ebd794'){
         //     console.log('passed the changing text newContent conditional')
         // }
         node.textContent = newContent;
@@ -166,14 +166,39 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
 }
 
 function couldMatch(fullAddress, partialOrFullAddress) {
-    // console.log(`could match function, trying to see if full address: ${fullAddress} matches partialOrFullAddress: ${partialOrFullAddress}`);
-    const partialStart = partialOrFullAddress.substr(0, 4);  // Get the first 4 and last 4 characters of the address we're testing against
-    const partialEnd = partialOrFullAddress.substr(-4);
-    const fullStart = fullAddress.substr(0, 4);  // Get the first 4 and last 4 characters of the full address gotten from the ethLabels database in storage
-    const fullEnd = fullAddress.substr(-4);
+    // console.log(`inside could match function:, trying to see if full address: ${fullAddress} matches partialOrFullAddress: ${partialOrFullAddress}`);
+    var partialStart = ''; 
+    var partialEnd = '';
+
+    const ellipsisRegex = /(\.\.\.)|(…)/;  // Matches either ... (3 dots, 3 chars) or … (an ellipsis, 1 char)
+
+    const ellipsisIndex = partialOrFullAddress.search(ellipsisRegex);
+    // console.log('partialOrFullAddress.length',partialOrFullAddress.length)
+    if (ellipsisIndex === -1){
+        // console.log('inside first conditional')
+        partialStart = partialOrFullAddress.slice(0,21)
+        partialEnd = partialOrFullAddress.slice(-21)
+    } else {
+        // console.log('inside second conditional')
+        // console.log('Before split:', partialOrFullAddress);
+        // [partialStart, partialEnd] = partialOrFullAddress.split('...');
+        // const ellipsisIndex = partialOrFullAddress.indexOf('...');
+        // console.log('ellipsisIndex', ellipsisIndex)
+        partialStart = partialOrFullAddress.slice(0, ellipsisIndex);
+        if(partialOrFullAddress.includes('...')){
+            partialEnd = partialOrFullAddress.slice(ellipsisIndex + 3);
+        }else {
+            partialEnd = partialOrFullAddress.slice(ellipsisIndex + 1);
+        }
+    }
+    // console.log('partialStart, partialEnd: ', partialStart, partialEnd)
+    // const partialStart = partialOrFullAddress.substr(0, 4);  // Get the first 4 and last 4 characters of the address we're testing against
+    // const partialEnd = partialOrFullAddress.substr(-4);
+    const fullStart = fullAddress.substr(0, partialStart.length);  // Get the first 4 and last 4 characters of the full address gotten from the ethLabels database in storage
+    const fullEnd = fullAddress.substr(-partialEnd.length);
 
     // Check if the partial address could match the full one
-    // console.log('address is a match:, partialStart, partialEnd, fullStart, fullEnd', partialStart === fullStart && partialEnd === fullEnd, partialStart, partialEnd, fullStart, fullEnd)
+    // console.log('address is a match?:, partialStart, partialEnd, fullStart, fullEnd', partialStart === fullStart && partialEnd === fullEnd, partialStart, partialEnd, fullStart, fullEnd)
     return partialStart === fullStart && partialEnd === fullEnd;
 }
 
