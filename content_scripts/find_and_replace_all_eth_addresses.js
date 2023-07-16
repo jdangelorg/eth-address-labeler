@@ -16,7 +16,7 @@ function loadLabelsReplaceTextConstructObserver() {
     chrome.storage.local.get(['ethLabels','replaceTextState'], (res) => {
         if(res.replaceTextState){
             if (res.ethLabels && Object.keys(res.ethLabels).length > 0) {
-                console.log('ethLabels object: ',res.ethLabels);
+                // console.log('ethLabels object: ',res.ethLabels);
                 const labels = res.ethLabels;
 
                 // Obtain a list of regular expressions from the label keys
@@ -27,7 +27,7 @@ function loadLabelsReplaceTextConstructObserver() {
 
                 // Combine all regular expressions into one
                 const addressesRegex = new RegExp(regexes.join('|'), 'gi');
-                console.log('global addresses regex',addressesRegex)
+                // console.log('global addresses regex',addressesRegex)
     
                 replaceText(document.body, labels, addressesRegex);
     
@@ -50,7 +50,7 @@ function loadLabelsReplaceTextConstructObserver() {
                 // Configure the observer to watch for nodes being added to the document, and then run replaceText on all new added nodes
                 observer.observe(document.body, { childList: true, subtree: true });
             } else {
-                console.log('no labels saved');
+                // console.log('no labels saved');
             }
         }
     });
@@ -166,14 +166,14 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
 }
 
 function couldMatch(fullAddress, partialOrFullAddress) {
-    console.log(`could match function, trying to see if full address: ${fullAddress} matches partialOrFullAddress: ${partialOrFullAddress}`);
+    // console.log(`could match function, trying to see if full address: ${fullAddress} matches partialOrFullAddress: ${partialOrFullAddress}`);
     const partialStart = partialOrFullAddress.substr(0, 4);  // Get the first 4 and last 4 characters of the address we're testing against
     const partialEnd = partialOrFullAddress.substr(-4);
     const fullStart = fullAddress.substr(0, 4);  // Get the first 4 and last 4 characters of the full address gotten from the ethLabels database in storage
     const fullEnd = fullAddress.substr(-4);
 
     // Check if the partial address could match the full one
-    console.log('address is a match:, partialStart, partialEnd, fullStart, fullEnd', partialStart === fullStart && partialEnd === fullEnd, partialStart, partialEnd, fullStart, fullEnd)
+    // console.log('address is a match:, partialStart, partialEnd, fullStart, fullEnd', partialStart === fullStart && partialEnd === fullEnd, partialStart, partialEnd, fullStart, fullEnd)
     return partialStart === fullStart && partialEnd === fullEnd;
 }
 
