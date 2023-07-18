@@ -161,7 +161,42 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
         // if(node.textContent == '0x358940...90ebd794'){
         //     console.log('passed the changing text newContent conditional')
         // }
-        node.textContent = newContent;
+        // node.textContent = newContent;
+        // node.style.backgroundColor = 'red'
+
+        // Create a new mark element
+        const mark = document.createElement('mark');
+
+        // Set the mark element's text content
+        mark.textContent = newContent;
+        mark.style.cssText = `
+            background-color: red;
+            border-radius: 5px;  /* round corners */
+            color: white;  /* change text color to white */
+        `
+
+        // Check if the parent node is an "a" tag
+        if (node.parentNode.nodeName.toLowerCase() === 'a') {
+            // If it is, add additional styles
+            mark.style.cssText += `
+                text-decoration: underline;
+                color: light grey;
+            `;
+        }
+
+        // Add a right click (contextmenu) event listener
+        mark.addEventListener('contextmenu', function(event) {
+            event.preventDefault();  // Prevent the default context menu from showing
+
+            const shouldDelete = confirm('Do you want to delete this label?');
+            if (shouldDelete) {
+                // If the user clicks "OK", delete the label
+                this.parentNode.removeChild(this);
+            }
+        });
+
+        // Replace the original text node with the new mark element
+        node.parentNode.replaceChild(mark, node);
     }
 }
 
