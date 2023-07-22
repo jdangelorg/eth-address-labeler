@@ -34,8 +34,8 @@ chrome.runtime.onMessage.addListener((msg,sender,sendResponse)=>{
         }
         // the context menu (right click option) for adding an eth label is hidden by default, if it passes any of our conditions,
         // then it will become visible and allow for the user to add a label
-        console.log(text)
-        console.log(getEthAddressFromUrl(text)) 
+        // console.log(text)
+        // console.log(getEthAddressFromUrl(text))
         const ethAddress = getEthAddressFromUrl(text)
         if(ethAddressPattern.test(text)){
             updateContextMenu(details)

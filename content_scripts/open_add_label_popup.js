@@ -1,8 +1,8 @@
-function createAddLabelPopup(selectedAddress) {
+async function createAddLabelPopup(selectedAddress) {
     // create a div because the shadow root cannot append to a body element.
     const popupMainDiv = document.createElement('div');
     popupMainDiv.classList.add('popup-main-div');
-    
+
     // Set the CSS styles
     popupMainDiv.style.cssText = `
         position: fixed !important;
@@ -76,26 +76,32 @@ function createAddLabelPopup(selectedAddress) {
     // Append elements to shadow root
     shadowRoot.append(closeButton, title, subtitle, address, inputLabel, colorSelector, submitButton);
     
+    
     // Append everything to the webpage
     document.body.appendChild(popupMainDiv);
+
     // automatically place the text cursor inside of the enter label input box
     inputLabel.focus()
     // After appending the popup to the body, start the animation
     setTimeout(() => {
         popupMainDiv.style.top = "0.5rem";  // End position inside of the view
     }, 0);
-
+    
     return new Promise((resolve, reject) => {
+        // console.log('promise created')
         function submitHandler() {
             chrome.storage.local.get('ethLabels', (res)=>{
                 const labels = Object.values(res.ethLabels)
                 if(labels.includes(inputLabel.value.trim())){
-                    reject('label already used') // reject the promise if the label has already been used for another address
+                    createLabelErrorMsg(shadowRoot, 'Label already used. Can only use labels once.')
+                } else if (inputLabel.value.length > 256){
+                    createLabelErrorMsg(shadowRoot, 'Label is too long. Labels can be 256 characters max.')
                 } else if(inputLabel.value !== ''){
                     removePopup(popupMainDiv)
-                    resolve(inputLabel.value) // Resolve the Promise with the entered label
+                    console.log('resolved', inputLabel.value)
+                    resolve(inputLabel.value) // allow with the entered label and close the popup window
                 } else {
-                    reject('No label entered') // Reject the Promise if no label was entered
+                    createLabelErrorMsg(shadowRoot, 'No label entered.')
                 }
             })
         }
@@ -107,7 +113,7 @@ function createAddLabelPopup(selectedAddress) {
                 submitHandler()
             }
         })
-        
+
         // Add closeButton event listener to close the popup and reject the Promise
         closeButton.addEventListener('click', () => {
             removePopup(popupMainDiv)
@@ -120,6 +126,19 @@ function removePopup(popupNode){
     document.body.removeChild(popupNode);
 }
 
+function createLabelErrorMsg(shadowRootNode, errorMessage){
+    const errorMsgCheck = shadowRootNode.querySelector('.error-msg-text')
+    if(errorMsgCheck){
+        shadowRootNode.removeChild(errorMsgCheck)
+    }
+    const errorMessageNode = document.createElement('p')
+    errorMessageNode.classList.add('error-msg-text')
+    errorMessageNode.textContent = errorMessage
+    errorMessageNode.style.cssText = `
+        color: red;
+    `
+    shadowRootNode.append(errorMessageNode)
+}
 
 (async function() {
     if (window.hasRun) {
@@ -132,9 +151,12 @@ function removePopup(popupNode){
             const popupMainDivCheck = document.querySelector('.popup-main-div')
             if(popupMainDivCheck){
                 removePopup(popupMainDivCheck)
-                // document.body.removeChild(popupMainDivCheck)
             }
-            const newLabel = await createAddLabelPopup(newAddress)
+            try{
+                newLabel = await createAddLabelPopup(newAddress)
+            }catch(error){
+                console.error(error)
+            }
             if (newLabel) {
                 // Using chrome.storage.sync to store the label
                 chrome.storage.local.get('ethLabels', (res)=>{
