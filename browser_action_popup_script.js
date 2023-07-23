@@ -29,30 +29,72 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     
     // perform actions when the on/off button is clicked
     var onOffButton = (document.getElementsByClassName('on-off-button'))[0]
-    var toggleState = null
+    // var toggleState = null
     var srcBlack = 'ON_off_button_black_360x360px.png'
     var srcGrey = 'on_OFF_button_grey_360x360px.png'
     // get toggle state on action popup load
     chrome.storage.local.get('replaceTextState',(res)=>{
-        toggleState = res.replaceTextState
+        // toggleState = res.replaceTextState
         onOffButton.src = res.replaceTextState ? srcBlack : srcGrey
     })
 
     onOffButton.addEventListener('click',(event)=>{
-        chrome.storage.local.get('replaceTextState',(res)=>{
-            if(res.replaceTextState){
-                event.target.src = srcGrey
-                chrome.storage.local.set({
-                    replaceTextState:false
-                },()=>{chrome.tabs.reload()})
-            }else{
-                event.target.src = srcBlack
-                chrome.storage.local.set({
-                    replaceTextState:true
-                },()=>{chrome.tabs.reload()})
-            }
-        })
+        toggleReplaceTextStateView(event.target)
     })
+
+    function toggleReplaceTextStateView(onOffButton){
+        addressesWindow.innerHTML = '';
+
+        var confirmationText = document.createElement('p')
+        confirmationText.textContent = 'Page will reload, confirm?'
+        confirmationText.style.cssText = `
+            font-weight: bold;
+            word-wrap: break-word;
+        `
+
+        var buttonsDiv = document.createElement('div')
+        buttonsDiv.style.cssText = `
+            display:flex;
+            justify-content:space-between;
+            gap:10px;
+        `
+        
+        var yesButton = document.createElement('button');
+        yesButton.innerText = 'Yes';
+    
+        var cancelButton = document.createElement('button');
+        cancelButton.innerText = 'Cancel';
+
+        addressesWindow.appendChild(confirmationText)
+        addressesWindow.appendChild(buttonsDiv);
+        buttonsDiv.appendChild(yesButton);
+        buttonsDiv.appendChild(cancelButton);
+
+        yesButton.addEventListener('click', () => {
+            console.log('onOffButtonImg', onOffButton)
+            chrome.storage.local.get('replaceTextState',(res)=>{
+                if(res.replaceTextState){
+                    onOffButton.src = srcGrey
+                    chrome.storage.local.set({
+                        replaceTextState:false
+                    },()=>{
+                        loadAddresses()
+                        chrome.tabs.reload()
+                    })
+                }else{
+                    onOffButton.src = srcBlack
+                    chrome.storage.local.set({
+                        replaceTextState:true
+                    },()=>{
+                        loadAddresses()
+                        chrome.tabs.reload()
+                    })
+                }
+            })
+        })
+
+        cancelButton.addEventListener('click', loadAddresses);
+    }
 
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse)=>{
         if(msg.request === 'toggleKeyCommandExecuted'){
@@ -115,9 +157,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
         reloadPageCheckbox.type = 'checkbox'
         reloadPageCheckbox.id = 'reload-page-checkbox'
         reloadPageCheckbox.checked = true
-        // reloadPageCheckbox.style.cssText = `
-        //     word-wrap: break-word;
-        // `
         
         var reloadPageCheckboxLabel = document.createElement('label')
         reloadPageCheckboxLabel.textContent = 'Reload page? Label will not appear until page is reloaded.'

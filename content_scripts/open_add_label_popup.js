@@ -170,7 +170,6 @@ function createLabelErrorMsg(shadowRootNode, errorMessage){
     })
 })();
 
-
 var updateEthLabels=(labelsObj, newLabel, newAddress)=>{
     labelsObj[newAddress] = newLabel
     chrome.storage.local.set({
