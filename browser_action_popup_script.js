@@ -114,6 +114,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
         var reloadPageCheckbox = document.createElement('input')
         reloadPageCheckbox.type = 'checkbox'
         reloadPageCheckbox.id = 'reload-page-checkbox'
+        reloadPageCheckbox.checked = true
         // reloadPageCheckbox.style.cssText = `
         //     word-wrap: break-word;
         // `
@@ -141,13 +142,16 @@ document.addEventListener("DOMContentLoaded", (event)=>{
             labelErrorMessage.textContent = ''
             addressErrorMessage.textContent = ''
 
-            var label = labelInput.value.trim();
-            var address = addressInput.value.trim();
+            var label = labelInput.value.toLowerCase().trim();
+            var address = addressInput.value.toLowerCase().trim();
+            console.log('label inputted: ',label)
+            console.log('address inputted: ',address)
             var validInput = true
 
             var reloadPage = reloadPageCheckbox.checked
             
             chrome.storage.local.get('ethLabels', (res) => {
+                const lowerCaseLabels = Object.values(res.ethLabels).map(label => label.toLowerCase());
                 // Check if anything is entered
                 if(label === '' && address === ''){
                     addressErrorMessage.innerText = 'You haven\'t entered anything.';
@@ -160,7 +164,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                     } else if (label.length > 256){
                         labelErrorMessage.innerText = 'Label is too long. Labels can be 256 characters max.';
                         validInput = false
-                    } else if (Object.values(res.ethLabels).includes(label)){
+                    } else if (lowerCaseLabels.includes(label)){
                         labelErrorMessage.innerText = 'Label is already being used.';
                         validInput = false
                     }
@@ -180,11 +184,14 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 
                 // if the input is valid, save the new label to storage
                 if(validInput){
-                    res.ethLabels[address] = label;
-                    chrome.storage.local.set({'ethLabels': res.ethLabels}, () => {
+                    // Add the non lowercased label to the label database
+                    res.ethLabels[address] = labelInput.value.trim();
+                    console.log('res.ethLabels after updating',res.ethLabels)
+                    chrome.storage.local.set({ethLabels: res.ethLabels}, () => {
                         // Return to main view
                         loadAddresses();
 
+                        //If the user checked to reload the page, reload it
                         if(reloadPage){
                             chrome.tabs.reload()
                         }

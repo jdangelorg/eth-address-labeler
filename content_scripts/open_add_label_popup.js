@@ -91,14 +91,13 @@ async function createAddLabelPopup(selectedAddress) {
         // console.log('promise created')
         function submitHandler() {
             chrome.storage.local.get('ethLabels', (res)=>{
-                const labels = Object.values(res.ethLabels)
-                if(labels.includes(inputLabel.value.trim())){
+                const lowerCaseLabels = Object.values(res.ethLabels).map(label => label.toLowerCase());
+                if(lowerCaseLabels.includes(inputLabel.value.toLowerCase().trim())){
                     createLabelErrorMsg(shadowRoot, 'Label already used. Can only use labels once.')
                 } else if (inputLabel.value.length > 256){
                     createLabelErrorMsg(shadowRoot, 'Label is too long. Labels can be 256 characters max.')
                 } else if(inputLabel.value !== ''){
                     removePopup(popupMainDiv)
-                    console.log('resolved', inputLabel.value)
                     resolve(inputLabel.value) // allow with the entered label and close the popup window
                 } else {
                     createLabelErrorMsg(shadowRoot, 'No label entered.')
@@ -153,9 +152,13 @@ function createLabelErrorMsg(shadowRootNode, errorMessage){
                 removePopup(popupMainDivCheck)
             }
             try{
-                newLabel = await createAddLabelPopup(newAddress)
+                var newLabel = await createAddLabelPopup(newAddress)
             }catch(error){
-                console.error(error)
+                if(error==='Popup closed'){
+                    // Do nothing
+                }else{
+                    console.error(error)
+                }
             }
             if (newLabel) {
                 // Using chrome.storage.sync to store the label
