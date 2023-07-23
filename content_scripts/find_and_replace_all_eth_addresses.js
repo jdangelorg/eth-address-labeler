@@ -70,14 +70,14 @@ try{
 function replaceText(node, labels, addressesRegex) {
     // If the element is a text node (any piece of text in an html document)
     if (node.nodeType === Node.TEXT_NODE) {
-        // if(node.textContent == '0x358940...90ebd794'){
+        // if(node.textContent == '27165a'){
         //     console.log('entered text node conditional')
         // }
         replaceTextInTextNode(node, labels, addressesRegex)
     // else if the element is an a tag (an element node) that contains an ethereum address in it, as well as text content that is the end of the address found
     // in a tag's href. this is for dexscreener.com because it doesn't show shortened addresses instead it shows the last 6 chars of the address
     } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'A' && hrefIsEtherscanAddress(node.href) && isLinkTextEndOfAddress(node.textContent, node.href)) {
-        // if(node.textContent == '0x358940...90ebd794'){
+        // if(node.textContent == '27165a'){
         //     console.log('entered a tag node conditional')
         //     console.log('is the href an etherscan address link?', hrefIsEtherscanAddress(node.href))
         //     console.log('is the a tag text the end of that address?',isLinkTextEndOfAddress(node.textContent, node.href))
@@ -96,7 +96,7 @@ function replaceText(node, labels, addressesRegex) {
 
 function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddress = false) {
     let newContent = node.textContent;
-    // if(node.textContent == '0x358940...90ebd794'){
+    // if(node.textContent == '27165a'){
     //     console.log('arguments passed to replaceTextInTextNode', node, labels, addressesRegex)
     //     console.log('isLinkTextEndOfAddress variable',isLinkTextEndOfAddress)
     // }
@@ -104,7 +104,8 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
     if(isLinkTextEndOfAddress){
         // const endOfAddressRegex = /0x[a-fA-F0-9]{34}([a-fA-F0-9]{6})$/i;
         const hrefAddress = node.href.split('/').pop().toLowerCase();
-        // if(node.textContent == 'FF0d4e'){
+        // if(node.textContent == '27165a'){
+        //     console.log('inside isLinkTextEndOfAddress conditional')
         //     console.log('hrefAddress variable', hrefAddress)
         //     console.log('object.keys(labels)', Object.keys(labels))
         //     console.log('does label object include hrefAddress?: ', labels.hasOwnProperty(hrefAddress))
@@ -113,28 +114,6 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
             newContent = labels[hrefAddress]
             // console.log('labels[hrefAddress]: ', labels[hrefAddress])
         }
-        // if(node.textContent == 'FF0d4e'){
-        //     console.log('entered the isLinkTextEndOfAddressConditional')
-        //     console.log('node.textContent', node.textContent)
-        //     console.log(endOfAddressRegex.test(node.textContent))
-        // }
-        // const newEndContent = node.textContent.replace(endOfAddressRegex, (match) => {
-        //     if(node.textContent == 'FF0d4e'){
-        //         console.log('entered the end of link text replace function')
-        //     }
-        //     const fullAddress = Object.keys(labels).find(address => address.endsWith(node.textContent));
-        //     return fullAddress ? labels[fullAddress] : match;
-        // });
-        
-        // If the text content was changed, update it
-        // if (node.textContent !== newEndContent) {
-        //     if(node.textContent == 'FF0d4e'){
-        //         console.log('passed the changing text newEndContent conditional')
-        //         console.log('newEndContent variable', newEndContent)
-        //         console.log('node.textContent', node.textContent)
-        //     }
-        //     node.textContent = newEndContent;
-        // }
     } else {
         // Replace each match in the text content with the corresponding label, saves into a new variable because that's how the .replace function works,
         // looks into the text content of the particular node we're on, and for every instance of text ('matched substring') that matches our global address regex,
@@ -142,14 +121,14 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
         // the replacer function would run on both the first ethereum address and the again on the second, shortened one as well.
         newContent = node.textContent.replace(addressesRegex, (match) => {
             const matchedSubstr = match.toLowerCase()
-            // if(node.textContent == '0x358940...90ebd794'){
+            // if(node.textContent == '27165a'){
             //     console.log('variable matchedSubstr', matchedSubstr)
             // }
             // Retrieve the full address corresponding to the match, .find retrieves the first item in an array that satisfies the testing condition,
             // it loops through the array and tests each array item against a testing condition, in this case our could match function
             const fullAddress = Object.keys(labels).find(address => couldMatch(address, matchedSubstr));
             // If a full address was found, return the label, otherwise return the match unchanged
-            // if(node.textContent == '0x358940...90ebd794'){
+            // if(node.textContent == '27165a'){
             //     console.log('fullAddress variable',fullAddress)
             // }
             return fullAddress ? labels[fullAddress] : matchedSubstr;
@@ -157,12 +136,6 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
     }
     // If the text content was changed, update it
     if (node.textContent !== newContent) {
-        // console.log('attempting to replace', node.textContent, 'with', newContent)
-        // if(node.textContent == '0x358940...90ebd794'){
-        //     console.log('passed the changing text newContent conditional')
-        // }
-        // node.textContent = newContent;
-        // node.style.backgroundColor = 'red'
 
         // Create a new mark element
         const mark = document.createElement('mark');
@@ -176,7 +149,7 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
         `
 
         // Check if the parent node is an "a" tag
-        if (node.parentNode.nodeName.toLowerCase() === 'a') {
+        if (node.parentNode.nodeName.toLowerCase() === 'a' || isLinkTextEndOfAddress) {
             // If it is, add additional styles
             mark.style.cssText += `
                 text-decoration: underline;
@@ -184,25 +157,29 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
             `;
         }
 
-        // Add a right click (contextmenu) event listener
-        mark.addEventListener('contextmenu', function(event) {
-            event.preventDefault();  // Prevent the default context menu from showing
+        // // Add a right click (contextmenu) event listener
+        // mark.addEventListener('contextmenu', function(event) {
+        //     event.preventDefault();  // Prevent the default context menu from showing
 
-            const shouldDelete = confirm('Do you want to delete this label?');
-            if (shouldDelete) {
-                // If the user clicks "OK", delete the label
-                this.parentNode.removeChild(this);
-            }
-        });
+        //     const shouldDelete = confirm('Do you want to delete this label?');
+        //     if (shouldDelete) {
+        //         // If the user clicks "OK", delete the label
+        //         this.parentNode.removeChild(this);
+        //     }
+        // });
 
         // Replace the original text node with the new mark element
-        node.parentNode.replaceChild(mark, node);
+        if(isLinkTextEndOfAddress){
+            node.childNodes[0].replaceWith(mark)
+        }else{
+            node.parentNode.replaceChild(mark, node);
+        }
     }
 }
 
 function couldMatch(fullAddress, partialOrFullAddress) {
     // console.log(`inside could match function:, trying to see if full address: ${fullAddress} matches partialOrFullAddress: ${partialOrFullAddress}`);
-    var partialStart = ''; 
+    var partialStart = '';
     var partialEnd = '';
 
     const ellipsisRegex = /(\.\.\.)|(…)/;  // Matches either ... (3 dots, 3 chars) or … (an ellipsis, 1 char)
