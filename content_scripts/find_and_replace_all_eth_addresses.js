@@ -157,17 +157,6 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
             `;
         }
 
-        // // Add a right click (contextmenu) event listener
-        // mark.addEventListener('contextmenu', function(event) {
-        //     event.preventDefault();  // Prevent the default context menu from showing
-
-        //     const shouldDelete = confirm('Do you want to delete this label?');
-        //     if (shouldDelete) {
-        //         // If the user clicks "OK", delete the label
-        //         this.parentNode.removeChild(this);
-        //     }
-        // });
-
         // Replace the original text node with the new mark element
         if(isLinkTextEndOfAddress){
             node.childNodes[0].replaceWith(mark)

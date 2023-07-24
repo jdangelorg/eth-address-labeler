@@ -7,7 +7,8 @@ chrome.runtime.onInstalled.addListener(()=>{
     })
     chrome.storage.local.set({
         ethLabels:{},
-        replaceTextState:true
+        replaceTextState:true,
+        selectedSort:'Newest First'
     })
 })
 

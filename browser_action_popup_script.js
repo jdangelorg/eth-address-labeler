@@ -1,20 +1,43 @@
 document.addEventListener("DOMContentLoaded", (event)=>{
     const addressesWindow = (document.getElementsByClassName('addresses-window'))[0]
 
+    var selectedSort = null
+    
+    chrome.storage.local.get('selectedSort', (res)=>{
+        selectedSort = res.selectedSort
+    })
+
     // Function to load and display the addresses
-    function loadAddresses() {
+    function loadAddresses(editable = false) {
         addressesWindow.innerHTML = '';
 
         // Get saved addresses from local storage
         chrome.storage.local.get('ethLabels', (res) => {
             // if there are any labels in storage, populate the window with them
             if (Object.keys(res.ethLabels).length > 0) {
+                const addressesListDiv = document.createElement('div')
+                addressesListDiv.style.cssText = `
+                    background-color: #FAF9F6;
+                    overflow-y: auto;
+                    height:96%;
+                    max-height: 96%;
+                    width:97%;
+                    display:flex;
+                    flex-direction:column;
+                    align-items:flex-start;
+                `
+
+                addressesWindow.appendChild(addressesListDiv)
                 Object.keys(res.ethLabels).forEach((address, i) => {
-                    if (i < 3) {
-                        var label = document.createElement('h4');
-                        label.innerText = `${res.ethLabels[address]} : ${address.substr(0, 9)}...${address.substr(-9)}`;
-                        addressesWindow.appendChild(label);
-                    }
+                    var label = document.createElement('h4');
+                    label.innerText = `${res.ethLabels[address]} : ${address.substr(0, 7)}...${address.substr(-7)}`;
+                    label.style.cssText = `
+                        margin-top:0;
+                        margin-bottom:0;
+                        border-bottom-style:solid;
+                        border-width:1px;
+                    `
+                    addressesListDiv.appendChild(label);
                 });
             } else {
                 var actionMsg = `
@@ -23,6 +46,58 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                     one to start.</h3>
                 `;
                 addressesWindow.innerHTML = actionMsg;
+            }
+                
+            if(editable){
+                const sortAddressesDiv = document.createElement('div')
+                sortAddressesDiv.style.cssText = `
+                    position: absolute;
+                    bottom: -18px;
+                    width: 100%;
+                `
+                const sortAddressesDropdown = document.createElement('select')
+                sortAddressesDropdown.id = 'sort-addresses-dropdown'
+    
+                sortAddressesDropdown.addEventListener('change', (event)=>{
+                    selectedSort = event.target.options[event.target.selectedIndex].text;
+                    chrome.storage.local.set({selectedSort:selectedSort})
+                    // console.log('selected sort: ', selectedSort)
+                })
+    
+                const sortAddressesDropdownLabel = document.createElement('label')
+                sortAddressesDropdownLabel.for = 'sort-addresses-dropdown'
+                sortAddressesDropdownLabel.textContent = ' <- Sort by'
+    
+                const sortAddressesOptionNewestFirst = document.createElement('option')
+                sortAddressesOptionNewestFirst.textContent = 'Newest First'
+                
+                const sortAddressesOptionOldestFirst = document.createElement('option')
+                sortAddressesOptionOldestFirst.textContent = 'Oldest First'
+                
+                const sortAddressesOptionAlphabetical = document.createElement('option')
+                sortAddressesOptionAlphabetical.textContent = 'Alphabetical'
+
+                chrome.storage.local.get('selectedSort', (res)=>{
+                    // console.log('selected sort last selected: ', res.selectedSort)
+                    // make the selected sort in the dropdown menu be the one that was last selected by the user
+                    if(res.selectedSort === 'Newest First'){
+                        sortAddressesOptionNewestFirst.selected = true
+                    } else if (res.selectedSort === 'Oldest First') {
+                        sortAddressesOptionOldestFirst.selected = true
+                    } else {
+                        sortAddressesOptionAlphabetical.selected = true
+                    }
+
+                    // make the selected sort variable be this one as well.
+                    selectedSort = res.selectedSort
+                })
+    
+                addressesWindow.appendChild(sortAddressesDiv)
+                sortAddressesDiv.appendChild(sortAddressesDropdown)
+                sortAddressesDiv.appendChild(sortAddressesDropdownLabel)
+                sortAddressesDropdown.appendChild(sortAddressesOptionNewestFirst)
+                sortAddressesDropdown.appendChild(sortAddressesOptionOldestFirst)
+                sortAddressesDropdown.appendChild(sortAddressesOptionAlphabetical)
             }
         });
     }
@@ -165,7 +240,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
             word-wrap: break-word;
         `
 
-
         addressesWindow.appendChild(labelInput);
         addressesWindow.appendChild(labelErrorMessage);
         addressesWindow.appendChild(addressInput);
@@ -242,30 +316,67 @@ document.addEventListener("DOMContentLoaded", (event)=>{
         cancelButton.addEventListener('click', loadAddresses);
     }
 
-    /* // perform actions when the edit button is clicked
-    var editButton = document.getElementById('edit-button');
+    // perform actions when the edit button is clicked
+    var editButton = (document.getElementsByClassName('edit-button'))[0];
+    var editToggle = false;
     editButton.addEventListener('click', function() {
-        // When the edit button is clicked, make the addresses editable and show the delete buttons
-        var table = document.getElementById('address-table');
-        for (var i = 0; i < table.rows.length; i++) {
-            var row = table.rows[i];
-            var cell = row.cells[0];
-    
-            // Make the cell editable
-            cell.contentEditable = 'true';
-    
-            // Add a delete button to the cell
-            var deleteButton = document.createElement('button');
-            deleteButton.innerHTML = 'Delete';
-            deleteButton.addEventListener('click', function() {
-                // When the delete button is clicked, remove the address from local storage and delete the row
-                // (You'll need to implement the deleteAddress function to remove the address from local storage)
-                deleteAddress(cell.innerHTML.split(' - ')[0]);
-                row.parentNode.removeChild(row);
-            });
-            cell.appendChild(deleteButton);
+        if(editToggle){
+            editToggle = false
+            loadAddresses(editToggle)
+        } else {
+            editToggle = true
+            loadAddresses(editToggle)
         }
-    }); */
+    });
+
+    function editAddressesView(editToggle){
+        // Load the addresses view with the editable flag on
+        // loadAddresses(editToggle)
+
+        const sortAddressesDiv = document.createElement('div')
+        sortAddressesDiv.style.cssText = `
+            position: absolute;
+            bottom: -18px;
+            width: 100%;
+        `
+        const sortAddressesDropdown = document.createElement('select')
+        sortAddressesDropdown.id = 'sort-addresses-dropdown'
+
+        sortAddressesDropdown.addEventListener('change', (event)=>{
+            let selectedSort = event.target.options[event.target.selectedIndex];
+            console.log('selected sort: ', selectedSort.text)
+            // loadAddresses(editToggle, selectedSort.text)
+        })
+
+        const sortAddressesDropdownLabel = document.createElement('label')
+        sortAddressesDropdownLabel.for = 'sort-addresses-dropdown'
+        sortAddressesDropdownLabel.textContent = ' <- Sort by'
+
+        const sortAddressesOptionNewestFirst = document.createElement('option')
+        sortAddressesOptionNewestFirst.textContent = 'Newest First'
+        
+        const sortAddressesOptionOldestFirst = document.createElement('option')
+        sortAddressesOptionOldestFirst.textContent = 'Oldest First'
+        
+        const sortAddressesOptionAlphabetical = document.createElement('option')
+        sortAddressesOptionAlphabetical.textContent = 'Alphabetical'
+
+        addressesWindow.appendChild(sortAddressesDiv)
+        sortAddressesDiv.appendChild(sortAddressesDropdown)
+        sortAddressesDiv.appendChild(sortAddressesDropdownLabel)
+        sortAddressesDropdown.appendChild(sortAddressesOptionNewestFirst)
+        sortAddressesDropdown.appendChild(sortAddressesOptionOldestFirst)
+        sortAddressesDropdown.appendChild(sortAddressesOptionAlphabetical)
+
+        // <label for="cars">Choose a car:</label>
+
+//         <select name="cars" id="cars">
+//   <option value="volvo">Volvo</option>
+//   <option value="saab">Saab</option>
+//   <option value="mercedes">Mercedes</option>
+//   <option value="audi">Audi</option>
+// </select>
+    }
 
     // Main function call
     loadAddresses()
