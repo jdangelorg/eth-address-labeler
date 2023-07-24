@@ -28,9 +28,21 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 `
 
                 addressesWindow.appendChild(addressesListDiv)
-                Object.keys(res.ethLabels).forEach((address, i) => {
+
+                let addresses = Object.keys(res.ethLabels)
+
+                // Sort the addresses based on the selected sort method
+                if (selectedSort === 'Newest First' || selectedSort === 'undefined' || selectedSort === null) {
+                    addresses.sort((a, b) => res.ethLabels[b].timestamp - res.ethLabels[a].timestamp);
+                } else if (selectedSort === 'Oldest First') {
+                    addresses.sort((a, b) => res.ethLabels[a].timestamp - res.ethLabels[b].timestamp);
+                } else if (selectedSort === 'Alphabetically') {
+                    addresses.sort((a, b) => res.ethLabels[a].label.localeCompare(res.ethLabels[b].label));
+                }
+                
+                addresses.forEach((address, i) => {
                     var label = document.createElement('h4');
-                    label.innerText = `${res.ethLabels[address]} : ${address.substr(0, 7)}...${address.substr(-7)}`;
+                    label.textContent = `${res.ethLabels[address].label} : ${address.substr(0, 7)}...${address.substr(-7)}`;
                     label.style.cssText = `
                         margin-top:0;
                         margin-bottom:0;
@@ -61,6 +73,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 sortAddressesDropdown.addEventListener('change', (event)=>{
                     selectedSort = event.target.options[event.target.selectedIndex].text;
                     chrome.storage.local.set({selectedSort:selectedSort})
+                    loadAddresses(true)
                     // console.log('selected sort: ', selectedSort)
                 })
     
@@ -74,8 +87,8 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 const sortAddressesOptionOldestFirst = document.createElement('option')
                 sortAddressesOptionOldestFirst.textContent = 'Oldest First'
                 
-                const sortAddressesOptionAlphabetical = document.createElement('option')
-                sortAddressesOptionAlphabetical.textContent = 'Alphabetical'
+                const sortAddressesOptionAlphabetically = document.createElement('option')
+                sortAddressesOptionAlphabetically.textContent = 'Alphabetically'
 
                 chrome.storage.local.get('selectedSort', (res)=>{
                     // console.log('selected sort last selected: ', res.selectedSort)
@@ -85,7 +98,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                     } else if (res.selectedSort === 'Oldest First') {
                         sortAddressesOptionOldestFirst.selected = true
                     } else {
-                        sortAddressesOptionAlphabetical.selected = true
+                        sortAddressesOptionAlphabetically.selected = true
                     }
 
                     // make the selected sort variable be this one as well.
@@ -97,19 +110,18 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 sortAddressesDiv.appendChild(sortAddressesDropdownLabel)
                 sortAddressesDropdown.appendChild(sortAddressesOptionNewestFirst)
                 sortAddressesDropdown.appendChild(sortAddressesOptionOldestFirst)
-                sortAddressesDropdown.appendChild(sortAddressesOptionAlphabetical)
+                sortAddressesDropdown.appendChild(sortAddressesOptionAlphabetically)
             }
         });
     }
     
     // perform actions when the on/off button is clicked
     var onOffButton = (document.getElementsByClassName('on-off-button'))[0]
-    // var toggleState = null
     var srcBlack = 'ON_off_button_black_360x360px.png'
     var srcGrey = 'on_OFF_button_grey_360x360px.png'
+
     // get toggle state on action popup load
     chrome.storage.local.get('replaceTextState',(res)=>{
-        // toggleState = res.replaceTextState
         onOffButton.src = res.replaceTextState ? srcBlack : srcGrey
     })
 
@@ -257,14 +269,14 @@ document.addEventListener("DOMContentLoaded", (event)=>{
 
             var label = labelInput.value.toLowerCase().trim();
             var address = addressInput.value.toLowerCase().trim();
-            console.log('label inputted: ',label)
-            console.log('address inputted: ',address)
+            // console.log('label inputted: ',label)
+            // console.log('address inputted: ',address)
             var validInput = true
 
             var reloadPage = reloadPageCheckbox.checked
             
             chrome.storage.local.get('ethLabels', (res) => {
-                const lowerCaseLabels = Object.values(res.ethLabels).map(label => label.toLowerCase());
+                const lowerCaseLabels = Object.values(res.ethLabels).map(labelData => labelData.label.toLowerCase());
                 // Check if anything is entered
                 if(label === '' && address === ''){
                     addressErrorMessage.innerText = 'You haven\'t entered anything.';
@@ -289,7 +301,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                     } else if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
                         addressErrorMessage.innerText = 'Invalid Ethereum address.';
                         validInput = false
-                    } else if (res.ethLabels[address]) {
+                    } else if (res.ethLabels[address] && res.ethLabels[address].label) {
                         addressErrorMessage.innerText = 'Address is already being used.';
                         validInput = false
                     }
@@ -298,7 +310,13 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 // if the input is valid, save the new label to storage
                 if(validInput){
                     // Add the non lowercased label to the label database
-                    res.ethLabels[address] = labelInput.value.trim();
+                    res.ethLabels[address] = {
+                        label: labelInput.value.trim(),
+                        timestamp: Date.now(),
+                        backgroundColor: 'red'
+                    };
+
+                    // console.log('new address and labelData object',res.ethLabels[address])
                     console.log('res.ethLabels after updating',res.ethLabels)
                     chrome.storage.local.set({ethLabels: res.ethLabels}, () => {
                         // Return to main view
@@ -328,55 +346,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
             loadAddresses(editToggle)
         }
     });
-
-    function editAddressesView(editToggle){
-        // Load the addresses view with the editable flag on
-        // loadAddresses(editToggle)
-
-        const sortAddressesDiv = document.createElement('div')
-        sortAddressesDiv.style.cssText = `
-            position: absolute;
-            bottom: -18px;
-            width: 100%;
-        `
-        const sortAddressesDropdown = document.createElement('select')
-        sortAddressesDropdown.id = 'sort-addresses-dropdown'
-
-        sortAddressesDropdown.addEventListener('change', (event)=>{
-            let selectedSort = event.target.options[event.target.selectedIndex];
-            console.log('selected sort: ', selectedSort.text)
-            // loadAddresses(editToggle, selectedSort.text)
-        })
-
-        const sortAddressesDropdownLabel = document.createElement('label')
-        sortAddressesDropdownLabel.for = 'sort-addresses-dropdown'
-        sortAddressesDropdownLabel.textContent = ' <- Sort by'
-
-        const sortAddressesOptionNewestFirst = document.createElement('option')
-        sortAddressesOptionNewestFirst.textContent = 'Newest First'
-        
-        const sortAddressesOptionOldestFirst = document.createElement('option')
-        sortAddressesOptionOldestFirst.textContent = 'Oldest First'
-        
-        const sortAddressesOptionAlphabetical = document.createElement('option')
-        sortAddressesOptionAlphabetical.textContent = 'Alphabetical'
-
-        addressesWindow.appendChild(sortAddressesDiv)
-        sortAddressesDiv.appendChild(sortAddressesDropdown)
-        sortAddressesDiv.appendChild(sortAddressesDropdownLabel)
-        sortAddressesDropdown.appendChild(sortAddressesOptionNewestFirst)
-        sortAddressesDropdown.appendChild(sortAddressesOptionOldestFirst)
-        sortAddressesDropdown.appendChild(sortAddressesOptionAlphabetical)
-
-        // <label for="cars">Choose a car:</label>
-
-//         <select name="cars" id="cars">
-//   <option value="volvo">Volvo</option>
-//   <option value="saab">Saab</option>
-//   <option value="mercedes">Mercedes</option>
-//   <option value="audi">Audi</option>
-// </select>
-    }
 
     // Main function call
     loadAddresses()

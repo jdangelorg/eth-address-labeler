@@ -96,6 +96,7 @@ function replaceText(node, labels, addressesRegex) {
 
 function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddress = false) {
     let newContent = node.textContent;
+    let address = ''
     // if(node.textContent == '27165a'){
     //     console.log('arguments passed to replaceTextInTextNode', node, labels, addressesRegex)
     //     console.log('isLinkTextEndOfAddress variable',isLinkTextEndOfAddress)
@@ -111,7 +112,7 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
         //     console.log('does label object include hrefAddress?: ', labels.hasOwnProperty(hrefAddress))
         // }
         if(labels.hasOwnProperty(hrefAddress)){
-            newContent = labels[hrefAddress]
+            newContent = labels[hrefAddress].label
             // console.log('labels[hrefAddress]: ', labels[hrefAddress])
         }
     } else {
@@ -131,7 +132,7 @@ function replaceTextInTextNode(node, labels, addressesRegex, isLinkTextEndOfAddr
             // if(node.textContent == '27165a'){
             //     console.log('fullAddress variable',fullAddress)
             // }
-            return fullAddress ? labels[fullAddress] : matchedSubstr;
+            return fullAddress ? labels[fullAddress].label : matchedSubstr;
         });
     }
     // If the text content was changed, update it

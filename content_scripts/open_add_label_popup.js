@@ -91,13 +91,16 @@ async function createAddLabelPopup(selectedAddress) {
         // console.log('promise created')
         function submitHandler() {
             chrome.storage.local.get('ethLabels', (res)=>{
-                const lowerCaseLabels = Object.values(res.ethLabels).map(label => label.toLowerCase());
+                const lowerCaseLabels = Object.values(res.ethLabels).map(labelData => labelData.label.toLowerCase());
                 if(lowerCaseLabels.includes(inputLabel.value.toLowerCase().trim())){
                     createLabelErrorMsg(shadowRoot, 'Label already used. Can only use labels once.')
                 } else if (inputLabel.value.length > 256){
                     createLabelErrorMsg(shadowRoot, 'Label is too long. Labels can be 256 characters max.')
+                } else if (res.ethLabels[selectedAddress] && res.ethLabels[selectedAddress].label) {
+                    createLabelErrorMsg(shadowRoot, 'Address already saved. Can only save addresses once.')
                 } else if(inputLabel.value !== ''){
                     removePopup(popupMainDiv)
+                    console.log('inputLabel.value', inputLabel.value)
                     resolve(inputLabel.value) // allow with the entered label and close the popup window
                 } else {
                     createLabelErrorMsg(shadowRoot, 'No label entered.')
@@ -171,7 +174,14 @@ function createLabelErrorMsg(shadowRootNode, errorMessage){
 })();
 
 var updateEthLabels=(labelsObj, newLabel, newAddress)=>{
-    labelsObj[newAddress] = newLabel
+    // Create a new object to store the label, timestamp, and color
+    let labelData = {
+        label: newLabel,
+        timestamp: Date.now(),
+        backgroundColor: 'red',
+    };
+    labelsObj[newAddress] = labelData
+    // labelsObj[newAddress] = newLabel
     chrome.storage.local.set({
         ethLabels:labelsObj
     },()=>{
