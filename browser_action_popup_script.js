@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     })
 
     // Function to load and display the addresses
-    function loadAddresses(editable = false) { 
+    function loadAddresses(editable = false) {
         addressesWindow.innerHTML = '';
 
         // Get saved addresses from local storage
@@ -42,13 +42,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 }
                 
                 addresses.forEach((address, i) => {
-                    // var wrapperDiv = document.createElement('div');
-                    // wrapperDiv.style.cssText = `
-                    //     display: flex;
-                    //     justify-content: space-between;
-                    //     align-items: center;
-                    //     position: relative;
-                    // `;
                     var outerDiv = document.createElement('div');
                     outerDiv.style.cssText = `
                         border: 2px solid transparent;
@@ -106,7 +99,8 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                             outerDiv.style.borderColor = 'transparent';
                         });
 
-                        // this makes it so that when you click on the label the cursor will be brough to the end of the label text so the user can start editing it
+                        // this makes it so that when you click on the label the cursor will be brought to the end of the label text so the user can start editing it
+                        // it will also create and show the trash bin icon for deleting functionality
                         labelAddressPairDiv.addEventListener('click', function() {
                             // Set the caret at the end of the text
                             let range = document.createRange();
@@ -117,6 +111,30 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                             sel.addRange(range);
                             // focus on the label
                             labelText.focus();
+                            
+                            
+                            const trashIconCheck = document.querySelector('.trash-icon')
+                            trashIconCheck && trashIconCheck.remove()
+
+                            // show the trash bin icon to delete the label
+                            const trashIcon = document.createElement('img')
+                            var srcLightgrey = 'trash_bin_icon_lightgrey_512x512px.png'
+                            trashIcon.src = srcLightgrey
+                            trashIcon.style.cssText = `
+                                position: absolute;
+                                left: -35px;
+                                top: calc(50% - 15px);
+                                cursor: pointer;
+                                height: 10vw;
+                            `
+                            trashIcon.classList.add('trash-icon')
+
+
+                            trashIcon.addEventListener('click', (event)=>{
+                                confirmLabelDeleteView(res, address)
+                            })
+
+                            addressesWindow.appendChild(trashIcon)
                         });
                         
                         // and this is the code so that the user can make their changes a reality in the program
@@ -124,42 +142,47 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                             let newLabel = event.target.textContent
                             if (newLabel !== event.target.dataset.originalText) {
                                 // if label has changed, display the checkmark and X icons
-                                displayIcons(outerDiv, labelText, address);
+                                displayIcons(addressesWindow, labelText, address);
                             }
 
-                            function displayIcons(outerDiv, labelText, address) {
+                            function displayIcons(addressesWindow, labelText, address) {
+                                // check if there are already x and checkmark icons present and then remove them so as to not have overlap
+                                const checkIconCheck = document.querySelector('.check-icon')
+                                checkIconCheck && checkIconCheck.remove()
+                                const xIconCheck = document.querySelector('.x-icon')
+                                xIconCheck && xIconCheck.remove()
+
                                 // create checkmark and x icons
                                 const checkIcon = document.createElement("span");
                                 checkIcon.textContent = "✓";
                                 checkIcon.style.cssText = `
                                     position: absolute;
                                     right: -40px;
-                                    top: calc(50% - 18px);
+                                    top: calc(50% - 15px);
                                     cursor: pointer;
                                     color: lightgrey;
                                     font-size:20px;                                    
                                 `;
+                                checkIcon.classList.add('check-icon')
                             
                                 const xIcon = document.createElement("span");
                                 xIcon.textContent = "✗";
                                 xIcon.style.cssText = `
                                     position: absolute;
                                     right: -20px;
-                                    top: calc(50% - 18px);
+                                    top: calc(50% - 15px);
                                     cursor: pointer;
                                     color: lightgrey;
-                                    font-size:20px;                                    
+                                    font-size:20px;                                
                                 `;
-
-                                const trashIcon = document.createElement('img')
-                                trashIcon.src = 'trash_bin_icon_lightgrey_512x512px.png'
-                                trashIcon.style.cssText = `
+                                xIcon.classList.add('x-icon')
                                 
-                                `
                             
-                                // append the icons to the label
-                                outerDiv.appendChild(checkIcon);
-                                outerDiv.appendChild(xIcon);
+                                // append the icons to the addresses window
+                                addressesWindow.appendChild(checkIcon);
+                                addressesWindow.appendChild(xIcon);
+
+                                const trashIconCheck = document.querySelector('.trash-icon')
                             
                                 // set click event listeners for the icons
                                 checkIcon.addEventListener("click", (event) => {
@@ -167,8 +190,10 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                                     const newLabel = labelText.textContent
                                     chrome.storage.local.get('ethLabels', (res)=>{
                                         res.ethLabels[address].label = newLabel;
-                                        chrome.storage.local.set({ethLabels: res.ethLabels}, ()=>{
-                                            console.log('Label updated');
+                                        chrome.storage.local.set({ethLabels: res.ethLabels},()=>{
+                                            checkIcon.remove()
+                                            xIcon.remove()
+                                            trashIconCheck && trashIconCheck.remove()
                                         });
                                     });
                                 });
@@ -178,6 +203,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                                     labelText.textContent = `${labelText.dataset.originalText}`;
                                     checkIcon.remove();
                                     xIcon.remove();
+                                    trashIconCheck && trashIconCheck.remove()
                                 });
                             }
                         });
@@ -477,6 +503,49 @@ document.addEventListener("DOMContentLoaded", (event)=>{
             loadAddresses(editToggle)
         }
     });
+
+    function confirmLabelDeleteView(res, address) {
+        addressesWindow.innerHTML = '';
+
+        var confirmationText = document.createElement('p')
+        confirmationText.textContent = `Deleting label "${res.ethLabels[address].label}", confirm?`
+        confirmationText.style.cssText = `
+            font-weight: bold;
+            word-wrap: break-word;
+        `
+
+        var buttonsDiv = document.createElement('div')
+        buttonsDiv.style.cssText = `
+            display:flex;
+            justify-content:space-between;
+            gap:10px;
+        `
+
+        var yesButton = document.createElement('button');
+        yesButton.innerText = 'Yes';
+
+        var cancelButton = document.createElement('button');
+        cancelButton.innerText = 'Cancel';
+
+        addressesWindow.appendChild(confirmationText)
+        addressesWindow.appendChild(buttonsDiv);
+        buttonsDiv.appendChild(yesButton);
+        buttonsDiv.appendChild(cancelButton);
+
+        yesButton.addEventListener('click', () => {
+            chrome.storage.local.get('ethLabels', (res) => {
+                delete res.ethLabels[address]
+
+                chrome.storage.local.set({ ethLabels: res.ethLabels }, () => {
+                    loadAddresses(true);  // Refresh the displayed addresses
+                });
+            })
+        })
+
+        cancelButton.addEventListener('click', ()=>{
+            loadAddresses(true)
+        });
+    }
 
     // Main function call
     loadAddresses()
