@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     })
 
     // Function to load and display the addresses
-    function loadAddresses(editable = false) {
+    function loadAddresses(editable = false) { 
         addressesWindow.innerHTML = '';
 
         // Get saved addresses from local storage
@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 addressesWindow.appendChild(addressesListDiv)
 
                 let addresses = Object.keys(res.ethLabels)
+                // console.log('addresses', addresses)
 
                 // Sort the addresses based on the selected sort method
                 if (selectedSort === 'Newest First' || selectedSort === 'undefined' || selectedSort === null) {
@@ -41,15 +42,146 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 }
                 
                 addresses.forEach((address, i) => {
-                    var label = document.createElement('h4');
-                    label.textContent = `${res.ethLabels[address].label} : ${address.substr(0, 7)}...${address.substr(-7)}`;
-                    label.style.cssText = `
-                        margin-top:0;
-                        margin-bottom:0;
-                        border-bottom-style:solid;
-                        border-width:1px;
+                    // var wrapperDiv = document.createElement('div');
+                    // wrapperDiv.style.cssText = `
+                    //     display: flex;
+                    //     justify-content: space-between;
+                    //     align-items: center;
+                    //     position: relative;
+                    // `;
+                    var outerDiv = document.createElement('div');
+                    outerDiv.style.cssText = `
+                        border: 2px solid transparent;
+                        display: inline-block;
+                        margin-top:-2px;
+                        width:100%;
+                        box-sizing:border-box;
                     `
-                    addressesListDiv.appendChild(label);
+                    var labelAddressPairDiv = document.createElement('div')
+                    labelAddressPairDiv.style.cssText = `
+                        display:flex;
+                        border-bottom: 1px solid black;
+                        justify-content:space-between;
+                        align-items:center;
+                    `
+                    var labelText = document.createElement('h4');
+                    labelText.textContent = `${res.ethLabels[address].label}`;
+                    labelText.style.cssText = `
+                        margin:0;
+                        overflow-wrap: break-word;
+                        word-break: break-all;
+                    `                        
+                    var colonText = document.createElement('h4')
+                    colonText.textContent = ':'
+                    colonText.style.cssText = `
+                        margin:0;
+                    `
+                    var addressText = document.createElement('h4')
+                    addressText.textContent = `${address.substr(0, 7)}...${address.substr(-7)}`
+                    addressText.style.cssText = `
+                        margin:0;
+                    `
+                    addressesListDiv.appendChild(outerDiv);
+                    outerDiv.appendChild(labelAddressPairDiv)
+                    labelAddressPairDiv.appendChild(labelText)
+                    labelAddressPairDiv.appendChild(colonText)
+                    labelAddressPairDiv.appendChild(addressText)
+                    
+                    if(editable) {
+                        labelText.contentEditable = "true";
+                        labelText.dataset.originalText = res.ethLabels[address].label;
+                        
+                        // mouseover and mouseout change the onHover style of each label ,
+                        // making it intuitive that the user can do something with each label when in edit mode by thickening the surrounding borders
+                        // and changing the cursor to the finger pointer
+                        labelAddressPairDiv.addEventListener("mouseover", function(){
+                            labelAddressPairDiv.style.cursor = 'pointer'
+                            labelAddressPairDiv.style.borderBottomColor = 'transparent';
+                            outerDiv.style.borderColor = 'black';                                    
+                        });
+                        
+                        labelAddressPairDiv.addEventListener("mouseout", function(){                            
+                            labelAddressPairDiv.style.cursor = 'auto';                        
+                            labelAddressPairDiv.style.borderBottomColor = 'black';
+                            outerDiv.style.borderColor = 'transparent';
+                        });
+
+                        // this makes it so that when you click on the label the cursor will be brough to the end of the label text so the user can start editing it
+                        labelAddressPairDiv.addEventListener('click', function() {
+                            // Set the caret at the end of the text
+                            let range = document.createRange();
+                            let sel = window.getSelection();
+                            range.setStart(labelText.childNodes[0], labelText.textContent.length);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                            // focus on the label
+                            labelText.focus();
+                        });
+                        
+                        // and this is the code so that the user can make their changes a reality in the program
+                        labelText.addEventListener("input", (event)=>{
+                            let newLabel = event.target.textContent
+                            if (newLabel !== event.target.dataset.originalText) {
+                                // if label has changed, display the checkmark and X icons
+                                displayIcons(outerDiv, labelText, address);
+                            }
+
+                            function displayIcons(outerDiv, labelText, address) {
+                                // create checkmark and x icons
+                                const checkIcon = document.createElement("span");
+                                checkIcon.textContent = "✓";
+                                checkIcon.style.cssText = `
+                                    position: absolute;
+                                    right: -40px;
+                                    top: calc(50% - 18px);
+                                    cursor: pointer;
+                                    color: lightgrey;
+                                    font-size:20px;                                    
+                                `;
+                            
+                                const xIcon = document.createElement("span");
+                                xIcon.textContent = "✗";
+                                xIcon.style.cssText = `
+                                    position: absolute;
+                                    right: -20px;
+                                    top: calc(50% - 18px);
+                                    cursor: pointer;
+                                    color: lightgrey;
+                                    font-size:20px;                                    
+                                `;
+
+                                const trashIcon = document.createElement('img')
+                                trashIcon.src = 'trash_bin_icon_lightgrey_512x512px.png'
+                                trashIcon.style.cssText = `
+                                
+                                `
+                            
+                                // append the icons to the label
+                                outerDiv.appendChild(checkIcon);
+                                outerDiv.appendChild(xIcon);
+                            
+                                // set click event listeners for the icons
+                                checkIcon.addEventListener("click", (event) => {
+                                    // update the label in storage
+                                    const newLabel = labelText.textContent
+                                    chrome.storage.local.get('ethLabels', (res)=>{
+                                        res.ethLabels[address].label = newLabel;
+                                        chrome.storage.local.set({ethLabels: res.ethLabels}, ()=>{
+                                            console.log('Label updated');
+                                        });
+                                    });
+                                });
+                            
+                                xIcon.addEventListener("click", ()=>{
+                                    // revert the label to the original text
+                                    labelText.textContent = `${labelText.dataset.originalText}`;
+                                    checkIcon.remove();
+                                    xIcon.remove();
+                                });
+                            }
+                        });
+                    }
                 });
             } else {
                 var actionMsg = `
@@ -74,7 +206,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                     selectedSort = event.target.options[event.target.selectedIndex].text;
                     chrome.storage.local.set({selectedSort:selectedSort})
                     loadAddresses(true)
-                    // console.log('selected sort: ', selectedSort)
                 })
     
                 const sortAddressesDropdownLabel = document.createElement('label')
@@ -158,7 +289,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
         buttonsDiv.appendChild(cancelButton);
 
         yesButton.addEventListener('click', () => {
-            console.log('onOffButtonImg', onOffButton)
+            // console.log('onOffButtonImg', onOffButton)
             chrome.storage.local.get('replaceTextState',(res)=>{
                 if(res.replaceTextState){
                     onOffButton.src = srcGrey
@@ -317,7 +448,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                     };
 
                     // console.log('new address and labelData object',res.ethLabels[address])
-                    console.log('res.ethLabels after updating',res.ethLabels)
+                    // console.log('res.ethLabels after updating',res.ethLabels)
                     chrome.storage.local.set({ethLabels: res.ethLabels}, () => {
                         // Return to main view
                         loadAddresses();
