@@ -118,8 +118,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
 
                             // show the trash bin icon to delete the label
                             const trashIcon = document.createElement('img')
-                            var srcLightgrey = 'trash_bin_icon_lightgrey_512x512px.png'
-                            trashIcon.src = srcLightgrey
+                            trashIcon.src = 'trash_bin_icon_858585_512x512px.png'
                             trashIcon.style.cssText = `
                                 position: absolute;
                                 left: -35px;
@@ -128,7 +127,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                                 height: 10vw;
                             `
                             trashIcon.classList.add('trash-icon')
-
 
                             trashIcon.addEventListener('click', (event)=>{
                                 confirmLabelDeleteView(res, address)
@@ -160,7 +158,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                                     right: -40px;
                                     top: calc(50% - 15px);
                                     cursor: pointer;
-                                    color: lightgrey;
+                                    color: #858585;
                                     font-size:20px;                                    
                                 `;
                                 checkIcon.classList.add('check-icon')
@@ -172,7 +170,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                                     right: -20px;
                                     top: calc(50% - 15px);
                                     cursor: pointer;
-                                    color: lightgrey;
+                                    color: #858585;
                                     font-size:20px;                                
                                 `;
                                 xIcon.classList.add('x-icon')
@@ -212,7 +210,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
             } else {
                 var actionMsg = `
                     <h3>You don't have any saved addresses! Try
-                    <a href='https://etherscan.io/address/0x0000000000000000000000000000000000000000' target='_blank'>this</a>
+                    <a href='https://etherscan.io/address/0xbeb5fc579115071764c7423a4f12edde41f106ed' target='_blank'>this</a>
                     one to start.</h3>
                 `;
                 addressesWindow.innerHTML = actionMsg;
@@ -227,6 +225,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 `
                 const sortAddressesDropdown = document.createElement('select')
                 sortAddressesDropdown.id = 'sort-addresses-dropdown'
+                sortAddressesDropdown.style.bottom = "100%"
     
                 sortAddressesDropdown.addEventListener('change', (event)=>{
                     selectedSort = event.target.options[event.target.selectedIndex].text;
@@ -276,6 +275,7 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     var onOffButton = (document.getElementsByClassName('on-off-button'))[0]
     var srcBlack = 'ON_off_button_black_360x360px.png'
     var srcGrey = 'on_OFF_button_grey_360x360px.png'
+    var onToggleLabelsView = false;
 
     // get toggle state on action popup load
     chrome.storage.local.get('replaceTextState',(res)=>{
@@ -283,11 +283,20 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     })
 
     onOffButton.addEventListener('click',(event)=>{
-        toggleReplaceTextStateView(event.target)
+        if(onToggleLabelsView){
+            onToggleLabelsView = false
+            loadAddresses()
+        } else {
+            onToggleLabelsView = true
+            toggleReplaceTextStateView(event.target)
+        }
     })
 
     function toggleReplaceTextStateView(onOffButton){
         addressesWindow.innerHTML = '';
+
+        var title = document.createElement('h3')
+        title.textContent = 'Turn on/off label replacement'
 
         var confirmationText = document.createElement('p')
         confirmationText.textContent = 'Page will reload, confirm?'
@@ -308,7 +317,8 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     
         var cancelButton = document.createElement('button');
         cancelButton.innerText = 'Cancel';
-
+        
+        addressesWindow.appendChild(title)
         addressesWindow.appendChild(confirmationText)
         addressesWindow.appendChild(buttonsDiv);
         buttonsDiv.appendChild(yesButton);
@@ -320,7 +330,8 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 if(res.replaceTextState){
                     onOffButton.src = srcGrey
                     chrome.storage.local.set({
-                        replaceTextState:false
+                        replaceTextState:false,
+                        onToggleLabelsView:false
                     },()=>{
                         loadAddresses()
                         chrome.tabs.reload()
@@ -328,7 +339,8 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                 }else{
                     onOffButton.src = srcBlack
                     chrome.storage.local.set({
-                        replaceTextState:true
+                        replaceTextState:true,
+                        onToggleLabelsView: false
                     },()=>{
                         loadAddresses()
                         chrome.tabs.reload()
@@ -348,11 +360,18 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     
     // perform actions when the plus button is clicked
     var plusButton = (document.getElementsByClassName('plus-button'))[0]
+    var onAddAddressView = false;
 
     plusButton.addEventListener('click',(event)=>{
-        const zoesElement = document.createElement('p')
-        zoesElement.textContent = 'This is zoes element.'
-        addAddressView()
+        // const zoesElement = document.createElement('p')
+        // zoesElement.textContent = 'This is zoe's element.'
+        if(onAddAddressView){
+            onAddAddressView = false
+            loadAddresses()
+        } else {
+            onAddAddressView = true
+            addAddressView()
+        }
     })
 
     function addAddressView() {

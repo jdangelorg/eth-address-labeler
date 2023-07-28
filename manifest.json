@@ -1,11 +1,11 @@
 {
     "manifest_version": 3,
     "name": "eth-address-labeler-beta",
-    "description": "Label Ethereum addresses in chrome!",
+    "description": "Label Ethereum addresses in chrome.",
     "version": "1.0",
     "action": {
         "default_title" : "eth-address-labeler-beta",
-        "default_icon": "icon.png",
+        "default_icon": "img-assets/logo_icon_128x128px.png",
         "default_popup" : "browser_action_popup.html"
     },
     "background" : {
@@ -23,9 +23,9 @@
         "<all_urls>"
     ],
     "icons" : {
-        "16" : "icon16.png",
-        "48" : "icon48.png",
-        "128" : "icon128.png"
+        "16" : "img-assets/logo_icon_16x16px.png",
+        "48" : "img-assets/logo_icon_48x48px.png",
+        "128" : "img-assets/logo_icon_128x128px.png"
     },
     "commands" : {
         "toggle labels" : {
