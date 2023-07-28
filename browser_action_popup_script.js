@@ -184,15 +184,31 @@ document.addEventListener("DOMContentLoaded", (event)=>{
                             
                                 // set click event listeners for the icons
                                 checkIcon.addEventListener("click", (event) => {
-                                    // update the label in storage
                                     const newLabel = labelText.textContent
+                                    var validInput = true;
                                     chrome.storage.local.get('ethLabels', (res)=>{
-                                        res.ethLabels[address].label = newLabel;
-                                        chrome.storage.local.set({ethLabels: res.ethLabels},()=>{
-                                            checkIcon.remove()
-                                            xIcon.remove()
-                                            trashIconCheck && trashIconCheck.remove()
-                                        });
+                                        const lowerCaseLabels = Object.values(res.ethLabels).map(labelData => labelData.label.toLowerCase());
+                                        // Validate label
+                                        if (newLabel === '') {
+                                            // labelErrorMessage.innerText = 'No label entered.';
+                                            validInput = false
+                                        } else if (newLabel.length > 256) {
+                                            // labelErrorMessage.innerText = 'Label is too long. Labels can be 256 characters max.';
+                                            validInput = false
+                                        } else if (lowerCaseLabels.includes(newLabel)) {
+                                            // labelErrorMessage.innerText = 'Label is already being used.';
+                                            validInput = false
+                                        }
+                                        // if label is valid, update the label in storage
+                                        if(validInput){
+                                            res.ethLabels[address].label = newLabel;
+                                            labelText.dataset.originalText = newLabel;
+                                            chrome.storage.local.set({ethLabels: res.ethLabels},()=>{
+                                                checkIcon.remove()
+                                                xIcon.remove()
+                                                trashIconCheck && trashIconCheck.remove()
+                                            });
+                                        }
                                     });
                                 });
                             
